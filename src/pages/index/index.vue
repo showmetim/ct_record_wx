@@ -1,9 +1,18 @@
 <template>
-  <view class="content">
-    <image class="logo" src="/static/logo.png"></image>
-    <view class="text-area">
+  <view class="page">
+    <view class="header">
       <text class="title">{{ title }}</text>
     </view>
+    <view class="photo flex flex-column flex-center">
+      <view class="photo-item flex flex-center" @click="toEditNotebook">
+        <image src="/static/images/camera.png" alt="" />
+      </view>
+      <view class="photo-text">记录笔记</view>
+    </view>
+    <view >
+
+    </view>
+    
   </view>
 </template>
 
@@ -11,38 +20,50 @@
 export default {
   data() {
     return {
-      title: 'Hello',
+      title: '稳定发挥',
     }
   },
   onLoad() {},
-  methods: {},
+  methods: {
+    toEditNotebook() {
+      uni.navigateTo({
+        url: '/pages/notebook/edit/index',
+      })
+    }
+  },
 }
 </script>
 
-<style>
-.content {
+<style scoped lang="scss">
+.page {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
+  padding: 30rpx;
+  .title {
+    font-size: 38rpx;
+    color: #1c2636;
+    font-weight: 500;
+  }
+  .photo {
+    padding: 50rpx 0 30rpx;
+    gap: 30rpx;
+    .photo-item {
+      width: 300rpx;
+      height: 300rpx;
+      border-radius: 50%;
+      background-color: #3a7afe;
+      image {
+        width: 100rpx;
+        height: 100rpx;
+      }
+    }
+    .photo-text {
+      font-size: 30rpx;
+      color: #364153;
+      font-weight: 500;
+    }
 
-.logo {
-  height: 200rpx;
-  width: 200rpx;
-  margin-top: 200rpx;
-  margin-left: auto;
-  margin-right: auto;
-  margin-bottom: 50rpx;
-}
+  }
 
-.text-area {
-  display: flex;
-  justify-content: center;
-}
-
-.title {
-  font-size: 36rpx;
-  color: #8f8f94;
 }
 </style>
