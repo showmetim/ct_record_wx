@@ -9,18 +9,64 @@
       </view>
       <view class="photo-text">记录笔记</view>
     </view>
-    <view >
-
+    <view class="recent-mistakes">
+      <view class="mistakes-header flex justify-between items-center">
+        <text class="mistakes-title">最近错题</text>
+        <text class="view-all">查看全部</text>
+      </view>
+      <view class="mistakes-list">
+        <!-- 使用组件展示错题 -->
+        <MistakeItem 
+          v-for="(item, index) in mistakeList" 
+          :key="index"
+          :image="item.image"
+          :category="item.category"
+          :bg-color="item.bgColor"
+          :time="item.time"
+          :text="item.text"
+          :error-count="item.errorCount"
+        />
+      </view>
     </view>
-    
   </view>
 </template>
 
 <script>
+import MistakeItem from '../../components/MistakeItem.vue'
+
 export default {
+  components: {
+    MistakeItem
+  },
   data() {
     return {
       title: '稳定发挥',
+      mistakeList: [
+        {
+          image: '/static/images/note1.png',
+          category: '数学',
+          bgColor: '#3a7afe',
+          time: '3天前',
+          text: '设函数 f(x) 在区间 [a,b] 上连续，在 (a,b)...',
+          errorCount: 2
+        },
+        {
+          image: '/static/images/note1.png',
+          category: '英语',
+          bgColor: '#4cd964',
+          time: '5天前',
+          text: 'The phenomenon of global warming ha...',
+          errorCount: 1
+        },
+        {
+          image: '/static/images/note1.png',
+          category: '政治',
+          bgColor: '#ff9500',
+          time: '1周前',
+          text: '马克思主义哲学认为，实践是认识的基础，...',
+          errorCount: 3
+        }
+      ]
     }
   },
   onLoad() {},
@@ -63,6 +109,25 @@ export default {
       font-weight: 500;
     }
 
+  }
+
+  .recent-mistakes {
+    margin-top: 30rpx;
+    .mistakes-header {
+      margin-bottom: 25rpx;
+      .mistakes-title {
+        font-size: 30rpx;
+        color: #1c2636;
+        font-weight: 500;
+      }
+      .view-all {
+        font-size: 24rpx;
+        color: #9ca4b1;
+      }
+    }
+    .mistakes-list {
+      /* 样式由组件内部管理 */
+    }
   }
 
 }

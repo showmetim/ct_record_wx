@@ -11,7 +11,7 @@
       </view>
     </view>
     <!-- 选择图片后：使用 swiper 展示 -->
-    <view v-if="photoList.length > 0" class="photo-select flex flex-end mb-30">
+    <view v-if="photoList.length > 0" class="photo-select flex justify-end mb-30">
       <view class="photo-text title-size" @click="takePhoto">继续拍照</view>
       <view class="img-select title-size" @click="choosePhoto">继续选择</view>
     </view>

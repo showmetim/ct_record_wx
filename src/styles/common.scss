@@ -11,8 +11,17 @@
 .flex-wrap {
   flex-wrap: wrap;
 }
-.flex-end {
+.flex-1 {
+  flex: 1;
+}
+.align-center {
+  align-items: center;
+}
+.justify-end {
   justify-content: flex-end;
+}
+.justify-between {
+  justify-content: space-between;
 }
 .mb-30 {
   margin-bottom: 30rpx;
