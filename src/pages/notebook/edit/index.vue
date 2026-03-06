@@ -16,7 +16,7 @@
       <view class="img-select title-size" @click="choosePhoto">继续选择</view>
     </view>
     <view v-if="photoList.length > 0" class="swiper-contain">
-      <swiper :indicator-dots="true" :autoplay="false" :interval="3000" :duration="1000" class="swiper">
+      <swiper :indicator-dots="true" indicator-active-color="#3a7afe" class="swiper">
         <swiper-item v-for="(item, index) in photoList" :key="index">
           <view class="swiper-item flex flex-center">
             <image mode="aspectFit" :src="item" alt="" class="swiper-image" @click="previewImage(index)" />
@@ -55,12 +55,12 @@
       </scroll-view>
     </view>
     
-    <!-- 知识概述 -->
+    <!-- 内容概述 -->
     <view class="textarea-container">
-      <view class="title title-size font-bold">知识概述<text class="edit-tip">（选填）</text></view>
+      <view class="title title-size font-bold">内容概述<text class="edit-tip">（选填）</text></view>
       <textarea 
         class="textarea" 
-        placeholder="请输入知识概述" 
+        placeholder="请输入内容概述" 
         v-model="overview"
         placeholder-style="color: #999; font-size: 28rpx;"
       ></textarea>
@@ -79,7 +79,7 @@
     
     <!-- 保存按钮 -->
     <view class="save-container">
-      <button class="save-btn" @click="saveNote">保存笔记</button>
+      <button class="save-btn" @click="saveNote">保存错题</button>
     </view>
   </view>
 </template>
@@ -93,7 +93,7 @@ const categories = ref(['默认', '数学',  '专业课'])
 const classify = ref('默认')
 // 编辑模式状态
 const isEditMode = ref(false)
-// 知识概述
+// 内容概述
 const overview = ref('')
 // 备注
 const remark = ref('')
@@ -172,7 +172,7 @@ const addCategory = () => {
     }
   })
 }
-// 保存笔记
+// 保存错题
 const saveNote = () => {
   // 表单验证
   if (photoList.value.length === 0) {
@@ -192,7 +192,7 @@ const saveNote = () => {
   }
   
   // 模拟提交数据
-  console.log('保存笔记数据:', noteData)
+  console.log('保存错题数据:', noteData)
   
   // 显示保存成功提示
   uni.showToast({
@@ -200,7 +200,7 @@ const saveNote = () => {
     icon: 'success'
   })
   
-  // 保存成功后可以跳转回笔记列表页面
+  // 保存成功后可以跳转回错题列表页面
   setTimeout(() => {
     uni.navigateBack()
   }, 1500)

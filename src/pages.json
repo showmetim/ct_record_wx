@@ -15,13 +15,25 @@
 		{
 			"path": "pages/notebook/index",
 			"style": {
-				"navigationBarTitleText": "笔记"
+				"navigationBarTitleText": "错题"
 			}
 		},
 		{
 			"path": "pages/notebook/edit/index",
 			"style": {
-				"navigationBarTitleText": "记录笔记"
+				"navigationBarTitleText": "记录错题"
+			}
+		},
+		{
+			"path": "pages/my/edit/index",
+			"style": {
+				"navigationBarTitleText": "个人信息"
+			}
+		},
+		{
+			"path": "pages/notebook/detail/index",
+			"style": {
+				"navigationBarTitleText": "错题详情"
 			}
 		}
 	],
@@ -32,7 +44,7 @@
 		"list": [
 			{
 				"pagePath": "pages/notebook/index",
-				"text": "笔记",
+				"text": "错题",
 				"iconPath": "static/images/tabbar/note.png",
 				"selectedIconPath": "static/images/tabbar/note_selected.png"
 			},

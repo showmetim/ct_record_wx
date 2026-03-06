@@ -1,7 +1,7 @@
 <template>
-  <view class="mistake-item flex">
+  <view class="mistake-item flex" @click="$emit('click')">
     <view class="mistake-image">
-      <image mode="aspectFill" :src="image" alt="" />
+      <image mode="aspectFill" :src="image" alt="" class="mistake-image-img" />
     </view>
     <view class="mistake-content flex-1">
       <view class="mistake-top flex justify-between">
@@ -9,12 +9,19 @@
         <text class="time">{{ time }}</text>
       </view>
       <text class="mistake-text">{{ text }}</text>
-      <text class="mistake-count">复习{{ errorCount }}次</text>
+      <view class="mistake-footer flex justify-between items-center">
+        <text class="mistake-count">复习{{ errorCount }}次</text>
+        <view class="status-tag" :class="status">
+          {{ statusText }}
+        </view>
+      </view>
     </view>
   </view>
 </template>
 
 <script setup>
+import { computed } from 'vue'
+
 const props = defineProps({
   image: {
     type: String,
@@ -39,7 +46,26 @@ const props = defineProps({
   errorCount: {
     type: Number,
     required: true
+  },
+  status: {
+    type: String,
+    default: 'pending', // pending: 待复习, reviewed: 已复习, mastered: 已掌握
+    validator: (value) => {
+      return ['pending', 'reviewed', 'mastered'].includes(value)
+    }
   }
+})
+
+const emit = defineEmits(['click'])
+
+// 根据状态值获取中文文本
+const statusText = computed(() => {
+  const statusMap = {
+    pending: '待复习',
+    reviewed: '已复习',
+    mastered: '已掌握'
+  }
+  return statusMap[props.status] || '待复习'
 })
 </script>
 
@@ -56,7 +82,7 @@ const props = defineProps({
     height: 100rpx;
     border-radius: 10rpx;
     overflow: hidden;
-    image {
+    .mistake-image-img {
       width: 100%;
       height: 100%;
       object-fit: cover;
@@ -66,11 +92,11 @@ const props = defineProps({
     .mistake-top {
       margin-bottom: 10rpx;
       .category-tag {
-              padding: 4rpx 12rpx;
-              border-radius: 10rpx;
-              font-size: 20rpx;
-              color: #fff;
-            }
+        padding: 4rpx 12rpx;
+        border-radius: 10rpx;
+        font-size: 20rpx;
+        color: #fff;
+      }
       .time {
         font-size: 20rpx;
         color: #9ca4b1;
@@ -90,6 +116,22 @@ const props = defineProps({
     .mistake-count {
       font-size: 23rpx;
       color: #364153;
+    }
+    .mistake-footer {
+      margin-top: 10rpx;
+    }
+    .status-tag {
+      border-radius: 10rpx;
+      font-size: 20rpx;
+      &.pending {
+        color: #ff9500;
+      }
+      &.reviewed {
+        color: #8b93fe;
+      }
+      &.mastered {
+        color: #4cd964;
+      }
     }
   }
 }

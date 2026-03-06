@@ -7,12 +7,12 @@
       <view class="photo-item flex flex-center" @click="toEditNotebook">
         <image src="/static/images/camera.png" alt="" />
       </view>
-      <view class="photo-text">记录笔记</view>
+      <view class="photo-text">拍照记录错题</view>
     </view>
     <view class="recent-mistakes">
       <view class="mistakes-header flex justify-between items-center">
         <text class="mistakes-title">最近错题</text>
-        <text class="view-all">查看全部</text>
+        <text class="view-all" @click="toViewAll">查看全部</text>
       </view>
       <view class="mistakes-list">
         <!-- 使用组件展示错题 -->
@@ -25,59 +25,71 @@
           :time="item.time"
           :text="item.text"
           :error-count="item.errorCount"
+          @click="goToDetail(item.id)"
         />
       </view>
     </view>
   </view>
 </template>
 
-<script>
+<script setup>
+import { ref, onMounted } from 'vue'
 import MistakeItem from '../../components/MistakeItem.vue'
 
-export default {
-  components: {
-    MistakeItem
+// 响应式变量
+const title = ref('今天也要稳稳上岸')
+const mistakeList = ref([
+  {
+    image: '/static/images/note1.png',
+    category: '数学',
+    bgColor: '#3a7afe',
+    time: '3天前',
+    text: '设函数 f(x) 在区间 [a,b] 上连续，在 (a,b)...',
+    errorCount: 2
   },
-  data() {
-    return {
-      title: '稳定发挥',
-      mistakeList: [
-        {
-          image: '/static/images/note1.png',
-          category: '数学',
-          bgColor: '#3a7afe',
-          time: '3天前',
-          text: '设函数 f(x) 在区间 [a,b] 上连续，在 (a,b)...',
-          errorCount: 2
-        },
-        {
-          image: '/static/images/note1.png',
-          category: '英语',
-          bgColor: '#4cd964',
-          time: '5天前',
-          text: 'The phenomenon of global warming ha...',
-          errorCount: 1
-        },
-        {
-          image: '/static/images/note1.png',
-          category: '政治',
-          bgColor: '#ff9500',
-          time: '1周前',
-          text: '马克思主义哲学认为，实践是认识的基础，...',
-          errorCount: 3
-        }
-      ]
-    }
+  {
+    image: '/static/images/note1.png',
+    category: '英语',
+    bgColor: '#4cd964',
+    time: '5天前',
+    text: 'The phenomenon of global warming ha...',
+    errorCount: 1
   },
-  onLoad() {},
-  methods: {
-    toEditNotebook() {
-      uni.navigateTo({
-        url: '/pages/notebook/edit/index',
-      })
-    }
-  },
+  {
+    image: '/static/images/note1.png',
+    category: '政治',
+    bgColor: '#ff9500',
+    time: '1周前',
+    text: '马克思主义哲学认为，实践是认识的基础，...',
+    errorCount: 3
+  }
+])
+
+// 跳转到编辑错题页面
+const toEditNotebook = () => {
+  uni.navigateTo({
+    url: '/pages/notebook/edit/index',
+  })
 }
+
+// 跳转到查看全部错题页面
+const toViewAll = () => {
+  uni.switchTab({
+    url: '/pages/notebook/index',
+  })
+}
+// 跳转到错题详情页面
+const goToDetail = (id) => {
+  uni.navigateTo({
+    url: `/pages/notebook/detail/index?id=${id}`,
+  })
+}
+
+
+// 页面加载时的逻辑
+onMounted(() => {
+  // 可以在这里添加页面加载时的逻辑
+})
 </script>
 
 <style scoped lang="scss">
