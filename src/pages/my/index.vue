@@ -64,7 +64,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-
+import { login } from '../../api/user'
 // 响应式变量
 const isLoggedIn = ref(false)
 const userInfo = ref({
@@ -97,11 +97,15 @@ const handleLogin = () => {
   uni.login({
     provider: 'weixin',
     success: (loginRes) => {
-      console.log('登录成功', loginRes)
+      const code = loginRes.code
       // 这里可以根据登录凭证获取用户信息
-      isLoggedIn.value = true
-      // 存储用户信息到本地
-      uni.setStorageSync('userInfo', userInfo.value)
+      login(code).then(res => {
+        if (res.code === 200) {
+          // isLoggedIn.value = true
+          // 存储用户信息到本地
+          // uni.setStorageSync('userInfo', res.data)
+        }
+      })
     },
   })
 }

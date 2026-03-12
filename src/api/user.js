@@ -1,12 +1,8 @@
 import request from './request';
 
-export const userApi = {
-  // 获取用户列表
-  userList: (params) => {
-    return request({
-      url: '/user/list',
-      method: 'get',
-      params
-    });
-  }
+// 登录
+export const login = (code) => {
+  return request.post('users/login', {
+    code
+  });
 };
