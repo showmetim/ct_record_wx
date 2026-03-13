@@ -16,7 +16,7 @@
       <!-- 学习目标 -->
       <view class="form-item">
         <text class="form-label">学习目标</text>
-        <input type="text" v-model="formData.learningGoal" class="form-input" placeholder="请输入学习目标" />
+        <input type="text" v-model="formData.studyGoal" class="form-input" placeholder="请输入学习目标" />
       </view>
     </view>
     
@@ -30,24 +30,33 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import { getUserInfo, updateUserInfo } from '../../../api/user'
 
 // 表单数据
 const formData = ref({
+  id: '',
   nickName: '',
   slogan: '',
-  learningGoal: ''
+  studyGoal: ''
 })
 
 // 页面加载时获取用户信息
-onMounted(() => {
-  const userInfo = uni.getStorageSync('userInfo')
-  if (userInfo) {
-    formData.value = {
-      nickName: userInfo.nickName || '',
-      slogan: userInfo.slogan || '',
-      learningGoal: userInfo.learningGoal || ''
-    }
+onLoad(() => {
+  const userId = uni.getStorageSync('userInfoId')
+  if (userId) {
+    // 调用接口获取最新用户信息
+    getUserInfo(userId).then(res => {
+      if (res.isSuccess) {
+        formData.value = {
+          id: res.data.id || '',
+          nickName: res.data.nickName || '',
+          slogan: res.data.slogan || '',
+          studyGoal: res.data.studyGoal || ''
+        }
+      }
+    })
   }
 })
 
@@ -67,23 +76,30 @@ const handleSave = () => {
     return
   }
   
-  // 保存到本地存储
-  const userInfo = {
-    ...uni.getStorageSync('userInfo'),
-    ...formData.value
+  const userId = uni.getStorageSync('userInfoId')
+  if (userId) {
+    // 调用接口更新用户信息
+    updateUserInfo(formData.value).then(res => {
+      if (res.isSuccess) {
+        // 显示成功提示
+        uni.showToast({
+          title: '保存成功',
+          icon: 'success'
+        })
+        
+        // 跳转回上一页
+        setTimeout(() => {
+          uni.navigateBack()
+        }, 1500)
+      } else {
+        // 显示错误提示
+        uni.showToast({
+          title: '保存失败，请重试',
+          icon: 'none'
+        })
+      }
+    })
   }
-  uni.setStorageSync('userInfo', userInfo)
-  
-  // 显示成功提示
-  uni.showToast({
-    title: '保存成功',
-    icon: 'success'
-  })
-  
-  // 跳转回上一页
-  setTimeout(() => {
-    uni.navigateBack()
-  }, 1500)
 }
 </script>
 

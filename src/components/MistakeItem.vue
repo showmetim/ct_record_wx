@@ -8,9 +8,9 @@
         <view class="category-tag" :style="{ backgroundColor: bgColor }">{{ category }}</view>
         <text class="time">{{ time }}</text>
       </view>
-      <text class="mistake-text">{{ text }}</text>
+      <text class="mistake-text">{{ content }}</text>
       <view class="mistake-footer flex justify-between items-center">
-        <text class="mistake-count">复习{{ errorCount }}次</text>
+        <text class="mistake-count">复习{{ reviewCount }}次</text>
         <view class="status-tag" :class="status">
           {{ statusText }}
         </view>
@@ -39,20 +39,17 @@ const props = defineProps({
     type: String,
     required: true
   },
-  text: {
+  content: {
     type: String,
     required: true
   },
-  errorCount: {
+  reviewCount: {
     type: Number,
     required: true
   },
   status: {
     type: String,
-    default: 'pending', // pending: 待复习, reviewed: 已复习, mastered: 已掌握
-    validator: (value) => {
-      return ['pending', 'reviewed', 'mastered'].includes(value)
-    }
+    default: 'LEARNING'
   }
 })
 
@@ -61,9 +58,8 @@ const emit = defineEmits(['click'])
 // 根据状态值获取中文文本
 const statusText = computed(() => {
   const statusMap = {
-    pending: '待复习',
-    reviewed: '已复习',
-    mastered: '已掌握'
+    LEARNING: '待复习',
+    MASTERED: '已掌握'
   }
   return statusMap[props.status] || '待复习'
 })
@@ -123,13 +119,10 @@ const statusText = computed(() => {
     .status-tag {
       border-radius: 10rpx;
       font-size: 20rpx;
-      &.pending {
+      &.LEARNING {
         color: #ff9500;
       }
-      &.reviewed {
-        color: #8b93fe;
-      }
-      &.mastered {
+      &.MASTERED {
         color: #4cd964;
       }
     }

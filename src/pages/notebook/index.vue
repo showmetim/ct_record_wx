@@ -1,14 +1,14 @@
 <template>
-  <view class="notebook-page">
+  <view class="notebook-page" @scrolltolower="onReachBottom">
     <!-- 标题和Tab切换 -->
     <view class="page-header">
       <view class="tab-container">
-        <view class="tab-item" :class="{ active: activeTab === 'all' }" @click="activeTab = 'all'">
+        <view class="tab-item" :class="{ active: activeTab === 'all' }" @click="switchTab('all')">
           全部
         </view>
-        <view class="tab-item" :class="{ active: activeTab === 'today' }" @click="activeTab = 'today'">
+        <view class="tab-item" :class="{ active: activeTab === 'today' }" @click="switchTab('today')">
           今日复习
-          <view class="badge">3</view>
+          <view class="badge" v-if="todayReview > 0">{{ todayReview }}</view>
         </view>
       </view>
     </view>
@@ -16,103 +16,105 @@
     <!-- 搜索和筛选 -->
     <view class="search-container" v-if="activeTab === 'all'">
       <view class="search-box flex items-center">
-        <input type="text" placeholder="错题搜索" class="search-input" />
+        <input 
+          type="text" 
+          placeholder="错题搜索" 
+          class="search-input" 
+          v-model="keyword"
+          @confirm="handleSearch"
+        />
+        <view class="search-btn" @click="handleSearch">搜索</view>
       </view>
     </view>
     
     <!-- 统计数据 -->
     <view class="stats-container" v-if="activeTab === 'all'">
-      <view class="stat-item">
-        <text class="stat-number">156</text>
+      <view class="stat-item" :class="{ active: activeStat === '' }" @click="handleStatClick('')">
+        <text class="stat-number">{{ total }}</text>
         <text class="stat-label">总习题</text>
       </view>
-      <view class="stat-item">
-        <text class="stat-number blue">12</text>
+      <view class="stat-item" :class="{ active: activeStat === 'LEARNING' }" @click="handleStatClick('LEARNING')">
+        <text class="stat-number blue">{{ learning }}</text>
         <text class="stat-label">待复习</text>
       </view>
-      <view class="stat-item">
-        <text class="stat-number green">89</text>
+      <view class="stat-item" :class="{ active: activeStat === 'MASTERED' }" @click="handleStatClick('MASTERED')">
+        <text class="stat-number green">{{ mastered }}</text>
         <text class="stat-label">已掌握</text>
       </view>
     </view>
     
     <!-- 错题列表 -->
-    <view class="mistakes-container">
+    <scroll-view 
+      class="mistakes-container" 
+      scroll-y="true" 
+      @scrolltolower="onReachBottom"
+    >
       <MistakeItem 
-        v-for="(item, index) in filteredMistakes" 
-        :key="index"
+        v-for="(item, index) in mistakeList" 
+        :key="item.id"
         :image="item.image"
         :category="item.category"
         :bg-color="item.bgColor"
         :time="item.time"
-        :text="item.text"
-        :error-count="item.errorCount"
+        :content="item.content"
+        :review-count="item.reviewCount"
         :status="item.status"
         @click="goToDetail(item.id)"
       />
-    </view>
+      
+      <!-- 加载更多 -->
+      <view class="load-more" v-if="loading">
+        <text>加载中...</text>
+      </view>
+      <view class="load-more" v-else-if="finished">
+        <text>没有更多数据了</text>
+      </view>
+    </scroll-view>
   </view>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import MistakeItem from '../../components/MistakeItem.vue'
-
+import { getNoteList, noteStats } from '../../api/note'
 
 // 响应式变量
 const activeTab = ref('all')
-const mistakeList = ref([
-  {
-    id: '1',
-    image: '/static/images/note1.png',
-    category: '数学',
-    bgColor: '#3a7afe',
-    time: '3天前',
-    text: '设函数 f(x) 在区间 [a,b] 上连续，在 (a,b)...',
-    errorCount: 2,
-    status: 'pending'
-  },
-  {
-    id: '2',
-    image: '/static/images/note1.png',
-    category: '英语',
-    bgColor: '#4cd964',
-    time: '5天前',
-    text: 'The phenomenon of global warming ha...',
-    errorCount: 1,
-    status: 'reviewed'
-  },
-  {
-    id: '3',
-    image: '/static/images/note1.png',
-    category: '政治',
-    bgColor: '#ff9500',
-    time: '1周前',
-    text: '马克思主义哲学认为，实践是认识的基础，...',
-    errorCount: 3,
-    status: 'mastered'
-  },
-  {
-    id: '4',
-    image: '/static/images/note1.png',
-    category: '数学',
-    bgColor: '#3a7afe',
-    time: '1周前',
-    text: '求极限 lim(x→0) (sin x - x) / x³ 的值',
-    errorCount: 1,
-    status: 'pending'
-  },
-  {
-    id: '5',
-    image: '/static/images/note1.png',
-    category: '专业课',
-    bgColor: '#9c27b0',
-    time: '2周前',
-    text: '简述操作系统中进程和线程的区别，以及...',
-    errorCount: 2,
-    status: 'reviewed'
+const mistakeList = ref([])
+const total = ref(0)
+const learning = ref(0)
+const mastered = ref(0)
+const todayReview = ref(0)
+const progress = ref(0)
+const keyword = ref('')
+const status = ref('')
+const reviewToday = ref(false)
+const page = ref(1)
+const pageSize = ref(10)
+const loading = ref(false)
+const finished = ref(false)
+const activeStat = ref('')
+
+// 格式化时间
+const formatTime = (time) => {
+  const date = new Date(time.replace(/-/g, '/'))
+  const diff = Date.now() - date.getTime()
+  const times = [
+    { unit: '年', value: 365 * 24 * 60 * 60 * 1000 },
+    { unit: '个月', value: 30 * 24 * 60 * 60 * 1000 },
+    { unit: '周', value: 7 * 24 * 60 * 60 * 1000 },
+    { unit: '天', value: 24 * 60 * 60 * 1000 },
+    { unit: '小时', value: 60 * 60 * 1000 },
+    { unit: '分钟', value: 60 * 1000 }
+  ]
+  for (const t of times) {
+    const num = Math.floor(diff / t.value)
+    if (num > 0) return `${num}${t.unit}前`
   }
-])
+
+  return '刚刚'
+}
 
 // 点击错题项进入详情页
 const goToDetail = (id) => {
@@ -121,26 +123,126 @@ const goToDetail = (id) => {
   })
 }
 
-// 计算属性：根据当前tab过滤数据
-const filteredMistakes = computed(() => {
-  if (activeTab.value === 'today') {
-    // 这里可以根据实际需求过滤今日需要复习的错题
-    // 现在返回前3条作为示例
-    return mistakeList.value.slice(0, 3)
+// 获取统计数据
+const getStats = () => {
+  noteStats().then(res => {
+    if (res.isSuccess) {
+      total.value = res.data.total
+      learning.value = res.data.learning
+      mastered.value = res.data.mastered
+      todayReview.value = res.data.todayReview
+      progress.value = res.data.progress
+    }
+  })
+}
+
+// 获取错题列表
+const getMistakes = (isLoadMore = false) => {
+  if (loading.value) return
+  
+  loading.value = true
+  
+  const params = {
+    page: isLoadMore ? page.value : 1,
+    pageSize: pageSize.value,
+    keyword: keyword.value,
+    status: status.value,
+    reviewToday: reviewToday.value
   }
-  return mistakeList.value
-})
+  
+  getNoteList(params).then(res => {
+    if (res.isSuccess) {
+      const list = res.data.list
+      // 转换数据格式
+      const transformedList = list.map(item => ({
+        id: item.id,
+        image: item.images && item.images.length > 0 ? item.images[0].url : '/static/images/note1.png',
+        category: item.category ? item.category.name : '未分类',
+        bgColor: item.category ? item.category.color : '#3a7afe',
+        time: formatTime(item.createdAt),
+        content: item.content || '无内容概述',
+        reviewCount: item.reviewCount || 0,
+        status: item.status
+      }))
+      
+      if (isLoadMore) {
+        mistakeList.value = [...mistakeList.value, ...transformedList]
+      } else {
+        mistakeList.value = transformedList
+      }
+      
+      // 判断是否还有更多数据
+      if (list.length < pageSize.value) {
+        finished.value = true
+      } else {
+        page.value++
+      }
+    }
+    loading.value = false
+  })
+}
+
+// 切换tab
+const switchTab = (tab) => {
+  activeTab.value = tab
+  if (tab === 'today') {
+    reviewToday.value = true
+    status.value = ''
+    keyword.value = ''
+    activeStat.value = ''
+  } else {
+    reviewToday.value = false
+  }
+  // 重置参数
+  page.value = 1
+  finished.value = false
+  // 获取数据
+  getMistakes()
+}
+
+// 点击统计项
+const handleStatClick = (statStatus) => {
+  status.value = statStatus
+  activeStat.value = statStatus
+  // 重置参数
+  page.value = 1
+  finished.value = false
+  // 获取数据
+  getMistakes()
+}
+
+// 搜索
+const handleSearch = () => {
+  // 重置参数
+  page.value = 1
+  finished.value = false
+  // 获取数据
+  getMistakes()
+}
+
+// 上拉加载
+const onReachBottom = () => {
+  if (!finished.value) {
+    getMistakes(true)
+  }
+}
 
 // 页面加载时的逻辑
-onMounted(() => {
-  // 可以在这里添加页面加载时的逻辑
+onShow(() => {
+  // 获取统计数据
+  getStats()
+  // 获取错题列表
+  getMistakes()
 })
 </script>
 
 <style scoped lang="scss">
 .notebook-page {
   padding: 30rpx;
-  min-height: 100vh;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
   
   .page-header {
     margin-bottom: 30rpx;
@@ -191,21 +293,17 @@ onMounted(() => {
     .search-box {
       border-radius: 15rpx;
       padding: 15rpx 20rpx;
-			background-color: #f8f9fa;
-      .search-icon {
-        width: 24rpx;
-        height: 24rpx;
-        margin-right: 15rpx;
-      }
+		background-color: #f8f9fa;
       .search-input {
         flex: 1;
         font-size: 28rpx;
         color: #333;
       }
-      .filter-icon {
-        width: 24rpx;
-        height: 24rpx;
+      .search-btn {
         margin-left: 15rpx;
+        font-size: 28rpx;
+        color: #3a7afe;
+        font-weight: 500;
       }
     }
   }
@@ -218,12 +316,26 @@ onMounted(() => {
 		gap: 30rpx;
     .stat-item {
       flex: 1;
-			display: flex;
-			flex-direction: column;
-			align-items: center;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
     	padding: 40rpx 30rpx;
-			background-color: #f8f9fa;
-			border-radius: 30rpx;
+		background-color: #f8f9fa;
+		border-radius: 30rpx;
+      cursor: pointer;
+      transition: all 0.3s;
+      &:hover {
+        background-color: #e9ecef;
+      }
+      &.active {
+        background-color: #3a7afe;
+        .stat-number {
+          color: #fff !important;
+        }
+        .stat-label {
+          color: #fff;
+        }
+      }
 
       .stat-number {
         font-size: 36rpx;
@@ -233,14 +345,25 @@ onMounted(() => {
         &.green {
           color: #4cd964;
         }
-				&.blue {
-					color: #8b93fe;
-				}
+			&.blue {
+				color: #8b93fe;
+			}
       }
       .stat-label {
         font-size: 24rpx;
         color: #9ca4b1;
       }
+    }
+  }
+  
+  .mistakes-container {
+    flex: 1;
+    overflow-y: auto;
+    .load-more {
+      text-align: center;
+      padding: 30rpx 0;
+      font-size: 24rpx;
+      color: #9ca4b1;
     }
   }
 }

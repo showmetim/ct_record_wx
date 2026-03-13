@@ -53,33 +53,46 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import { getNoteDetail, reviewNote, masteredNote } from '../../../api/note'
 
-// 获取路由参数
-const getRouteParams = () => {
-  const pages = getCurrentPages()
-  if (pages.length > 0) {
-    const currentPage = pages[pages.length - 1]
-    return currentPage.options || {}
-  }
-  return {}
-}
+// 路由参数
+const routeParams = ref({ id: '' })
 
-const routeParams = getRouteParams()
+// 页面加载时获取数据
+onLoad((options) => {
+  routeParams.value = options
+  // 获取错题详情
+  getNoteDetail(options.id).then(res => {
+    if (res.isSuccess) {
+      const data = res.data
+      mistakeData.value = {
+        id: data.id,
+        classify: {
+          name: data.category ? data.category.name : '未分类',
+          bgColor: data.category ? data.category.color : '#3a7afe'
+        },
+        imgList: data.images ? data.images.map(img => img.url) : [],
+        remark: data.note || '',
+        overview: data.content || '',
+        createTime: data.createdAt,
+        reviewTime: data.lastReviewTime || data.createdAt
+      }
+    }
+  })
+})
 
-// 模拟错题数据
+// 错题数据
 const mistakeData = ref({
-  id: routeParams.id || '1',
+  id: '1',
   classify: {
     name: '数学',
     bgColor: '#3a7afe'
   },
-  imgList: [
-    '/static/images/note1.png',
-    '/static/images/note1.png'
-  ],
-  remark: '需要注意函数在区间端点的取值相等这个条件，这是应用洛尔定理的关键。',
-  overview: '设函数 f(x) 在区间 [a,b] 上连续，在 (a,b) 内可导，且 f(a)=f(b)=0...',
+  imgList: [],
+  remark: '',
+  overview: '',
   createTime: new Date().toISOString(),
   reviewTime: new Date().toISOString()
 })
@@ -106,10 +119,19 @@ const previewImage = (current, index) => {
 
 // 标记为已复习
 const markAsReviewed = () => {
-  mistakeData.value.reviewTime = new Date().toISOString()
-  uni.showToast({
-    title: '已标记为已复习',
-    icon: 'success'
+  reviewNote(routeParams.value.id).then(res => {
+    if (res.isSuccess) {
+      mistakeData.value.reviewTime = new Date().toISOString()
+      uni.showToast({
+        title: '已标记为已复习',
+        icon: 'success'
+      })
+    } else {
+      uni.showToast({
+        title: '操作失败，请重试',
+        icon: 'none'
+      })
+    }
   })
 }
 
@@ -120,14 +142,23 @@ const markAsMastered = () => {
     content: '确定要标记为已掌握吗？标记后将从错题集中移除。',
     success: (res) => {
       if (res.confirm) {
-        uni.showToast({
-          title: '已标记为已掌握',
-          icon: 'success'
+        masteredNote(routeParams.value.id).then(res => {
+          if (res.isSuccess) {
+            uni.showToast({
+              title: '已标记为已掌握',
+              icon: 'success'
+            })
+            // 延时返回上一页
+            setTimeout(() => {
+              uni.navigateBack()
+            }, 1500)
+          } else {
+            uni.showToast({
+              title: '操作失败，请重试',
+              icon: 'none'
+            })
+          }
         })
-        // 延时返回上一页
-        setTimeout(() => {
-          uni.navigateBack()
-        }, 1500)
       }
     }
   })
@@ -136,16 +167,9 @@ const markAsMastered = () => {
 // 跳转到编辑页面
 const goToEdit = () => {
   uni.navigateTo({
-    url: `/pages/notebook/edit/index?id=${routeParams.id}`
+    url: `/pages/notebook/edit/index?id=${routeParams.value.id}`
   })
 }
-
-// 页面加载时获取数据
-onMounted(() => {
-  // 这里可以通过 API 获取真实的错题数据
-  // 例如: fetchMistakeDetail(routeParams.id)
-  console.log('加载错题详情:', routeParams.id)
-})
 </script>
 
 <style lang="scss" scoped>

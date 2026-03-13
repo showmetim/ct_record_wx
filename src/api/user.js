@@ -6,3 +6,13 @@ export const login = (code) => {
     code
   });
 };
+
+// 获取用户信息
+export const getUserInfo = (userId) => {
+  return request.get(`users/detail/${userId}`);
+};
+
+// 更新用户信息
+export const updateUserInfo = (data) => {
+  return request.post(`users/edit`, data);
+};

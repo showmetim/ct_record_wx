@@ -1,14 +1,13 @@
 // 基础配置
 const baseURL = import.meta.env.VITE_API_BASE_URL;
 const timeout = 10000;
-console.log(import.meta.env);
 // 请求拦截器
 function requestInterceptor(config) {
   // 可以在这里添加 token 等认证信息
-  // const token = uni.getStorageSync('token');
-  // if (token) {
-  //   config.header.Authorization = `Bearer ${token}`;
-  // }
+  const userInfoId = uni.getStorageSync('userInfoId');
+  if (userInfoId) {
+    config.header.userId = userInfoId;
+  }
   return config;
 }
 
@@ -16,9 +15,9 @@ function requestInterceptor(config) {
 function responseInterceptor(response) {
   const res = response.data;
   // 可以根据业务逻辑处理响应
-  if (res.code !== 200) {
-    console.error('请求失败:', res.message);
-    return Promise.reject(new Error(res.message || '请求失败'));
+  
+   if (res.code !== 200) {
+    return Promise.reject(new Error(res.msg || '请求失败'));
   }
   return res;
 }
@@ -61,7 +60,7 @@ const service = {
     });
   },
   get(url, config = {}) {
-    return this.request({ ...config, url, method: 'GET' });
+    return this.request({ ...config, url, method: 'GET', data: config.params });
   },
   post(url, data, config = {}) {
     return this.request({ ...config, url, method: 'POST', data });

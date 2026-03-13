@@ -27,7 +27,7 @@
 					</view>
           <text class="data-label">学习目标</text>
         </view>
-        <text class="data-value">{{ userInfo.learningGoal }}</text>
+        <text class="data-value">{{ userInfo.studyGoal }}</text>
       </view>
       <view class="data-item">
         <view class="data-left">
@@ -36,7 +36,7 @@
 					</view>
           <text class="data-label">学习天数</text>
         </view>
-        <text class="data-value">已坚持 67 天</text>
+        <text class="data-value">已坚持 {{ userInfo.streakDays }} 天</text>
       </view>
       <view class="data-item">
         <view class="data-left">
@@ -63,23 +63,37 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { login } from '../../api/user'
+import { ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
+import { login, getUserInfo } from '../../api/user'
 // 响应式变量
 const isLoggedIn = ref(false)
 const userInfo = ref({
-  nickName: '学习者',
-  slogan: '持续进步，稳步前行',
-  learningGoal: '考研上岸',
+  nickName: '',
+  slogan: '',
+  studyGoal: '',
+  streakDays: 0,
 })
 
 // 检查登录状态
 const checkLoginStatus = () => {
   // 这里可以从本地存储或后端检查登录状态
-  const storedUserInfo = uni.getStorageSync('userInfo')
-  if (storedUserInfo) {
+  const userId = uni.getStorageSync('userInfoId')
+  if (userId) {
     isLoggedIn.value = true
-    userInfo.value = storedUserInfo
+    // 获取用户详情
+    getUserInfo(userId).then(userRes => {
+      if (userRes.isSuccess) {
+        // 只更新需要的字段
+        userInfo.value = {
+          ...userInfo.value,
+          nickName: userRes.data.nickName,
+          slogan: userRes.data.slogan,
+          studyGoal: userRes.data.studyGoal,
+          streakDays: userRes.data.streakDays
+        }
+      }
+    })
   }
 }
 
@@ -100,18 +114,31 @@ const handleLogin = () => {
       const code = loginRes.code
       // 这里可以根据登录凭证获取用户信息
       login(code).then(res => {
-        if (res.code === 200) {
-          // isLoggedIn.value = true
-          // 存储用户信息到本地
-          // uni.setStorageSync('userInfo', res.data)
+        if (res.isSuccess) {
+          isLoggedIn.value = true
+          // 只存储用户id到本地
+          uni.setStorageSync('userInfoId', res.data.id)
+          // 获取用户详情
+          getUserInfo(res.data.id).then(userRes => {
+            if (userRes.isSuccess) {
+              // 只更新需要的字段
+              userInfo.value = {
+                ...userInfo.value,
+                nickName: userRes.data.nickName,
+                slogan: userRes.data.slogan,
+                studyGoal: userRes.data.studyGoal,
+                streakDays: userRes.data.streakDays
+              }
+            }
+          })
         }
       })
     },
   })
 }
 
-// 页面加载时检查登录状态
-onMounted(() => {
+// 页面显示时检查登录状态
+onShow(() => {
   checkLoginStatus()
 })
 </script>

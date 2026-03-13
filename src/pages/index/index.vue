@@ -18,13 +18,13 @@
         <!-- 使用组件展示错题 -->
         <MistakeItem 
           v-for="(item, index) in mistakeList" 
-          :key="index"
+          :key="item.id"
           :image="item.image"
           :category="item.category"
           :bg-color="item.bgColor"
           :time="item.time"
-          :text="item.text"
-          :error-count="item.errorCount"
+          :content="item.content"
+          :review-count="item.reviewCount"
           @click="goToDetail(item.id)"
         />
       </view>
@@ -33,37 +33,34 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import MistakeItem from '../../components/MistakeItem.vue'
+import { getNoteList } from '../../api/note'
 
 // 响应式变量
 const title = ref('今天也要稳稳上岸')
-const mistakeList = ref([
-  {
-    image: '/static/images/note1.png',
-    category: '数学',
-    bgColor: '#3a7afe',
-    time: '3天前',
-    text: '设函数 f(x) 在区间 [a,b] 上连续，在 (a,b)...',
-    errorCount: 2
-  },
-  {
-    image: '/static/images/note1.png',
-    category: '英语',
-    bgColor: '#4cd964',
-    time: '5天前',
-    text: 'The phenomenon of global warming ha...',
-    errorCount: 1
-  },
-  {
-    image: '/static/images/note1.png',
-    category: '政治',
-    bgColor: '#ff9500',
-    time: '1周前',
-    text: '马克思主义哲学认为，实践是认识的基础，...',
-    errorCount: 3
+const mistakeList = ref([])
+
+// 格式化时间
+const formatTime = (dateString) => {
+  const now = new Date()
+  const date = new Date(dateString)
+  const diffTime = now - date
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+  
+  if (diffDays === 0) {
+    return '今天'
+  } else if (diffDays === 1) {
+    return '1天前'
+  } else if (diffDays < 7) {
+    return `${diffDays}天前`
+  } else if (diffDays < 30) {
+    return `${Math.floor(diffDays / 7)}周前`
+  } else {
+    return `${Math.floor(diffDays / 30)}个月前`
   }
-])
+}
 
 // 跳转到编辑错题页面
 const toEditNotebook = () => {
@@ -87,8 +84,23 @@ const goToDetail = (id) => {
 
 
 // 页面加载时的逻辑
-onMounted(() => {
-  // 可以在这里添加页面加载时的逻辑
+onShow(() => {
+  // 获取错题列表
+  getNoteList({ page: 1, pageSize: 3 }).then(res => {
+    if (res.isSuccess) {
+      const list = res.data.list
+      // 转换数据格式
+      mistakeList.value = list.map(item => ({
+        id: item.id,
+        image: item.images && item.images.length > 0 ? item.images[0].url : '/static/images/note1.png',
+        category: item.category ? item.category.name : '未分类',
+        bgColor: item.category ? item.category.color : '#3a7afe',
+        time: formatTime(item.createdAt),
+        content: item.content || '无内容概述',
+        reviewCount: item.reviewCount || 0
+      }))
+    }
+  })
 })
 </script>
 
