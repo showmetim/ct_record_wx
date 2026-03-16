@@ -19,7 +19,7 @@
       <swiper :indicator-dots="true" indicator-active-color="#3a7afe" class="swiper">
         <swiper-item v-for="(item, index) in photoList" :key="index">
           <view class="swiper-item flex flex-center">
-            <image mode="aspectFit" :src="item" alt="" class="swiper-image" @click="previewImage(index)" />
+            <image mode="aspectFit" :src="item.url" alt="" class="swiper-image" @click="previewImage(index)" />
             <!-- 删除按钮 -->
             <view class="delete-btn" @click.stop="deletePhoto(index)">
               <text class="delete-icon">×</text>
@@ -124,9 +124,9 @@ onLoad((options) => {
         content.value = noteData.content || ''
         note.value = noteData.note || ''
         classify.value = noteData.categoryId || ''
-        // 回显图片（假设接口返回的是图片对象数组，包含id和url）
+        // 回显图片（存储完整的图片对象，包含id和url）
         if (noteData.images && noteData.images.length > 0) {
-          photoList.value = noteData.images.map(img => img.url)
+          photoList.value = noteData.images
         }
       }
     })
@@ -180,10 +180,14 @@ const uploadImageFile = (filePath) => {
       try {
         const response = JSON.parse(uploadRes.data)
         if (response.isSuccess) {
-          // 上传成功，获取图片url
-          const imageUrl = response.data.url
-          photoList.value.push(imageUrl)
-          newImages.value.push(imageUrl)
+          // 上传成功，获取图片信息
+          const imageData = response.data
+          const imageObj = {
+            id: imageData.id, // 假设接口返回的data中包含id
+            url: imageData.url
+          }
+          photoList.value.push(imageObj)
+          newImages.value.push(imageObj)
         } else {
           uni.showToast({
             title: '图片上传失败',
@@ -215,9 +219,11 @@ const deletePhoto = (index) => {
       if (res.confirm) {
         // 如果是编辑模式，需要记录删除的图片id
         if (isEditMode.value) {
-          // 假设photoList中存储的是图片对象，包含id和url
-          // 这里简化处理，实际需要根据接口返回的数据结构调整
-          // deleteImageIds.value.push(photoList.value[index].id)
+          // 获取图片对象，包含id和url
+          const deletedImage = photoList.value[index]
+          if (deletedImage.id) {
+            deleteImageIds.value.push(deletedImage.id)
+          }
         }
         photoList.value.splice(index, 1)
       }
@@ -227,8 +233,10 @@ const deletePhoto = (index) => {
 
 // 预览图片
 const previewImage = (index) => {
+  // 提取图片url数组用于预览
+  const imageUrls = photoList.value.map(img => img.url)
   uni.previewImage({
-    urls: photoList.value,
+    urls: imageUrls,
     current: index,
   })
 }
@@ -334,7 +342,7 @@ const saveNote = () => {
     
     // 如果有新上传的图片
     if (newImages.value.length > 0) {
-      updateData.newImages = newImages.value
+      updateData.newImages = newImages.value.map(img => img.url)
     }
     
     // 如果有删除的图片
@@ -362,7 +370,7 @@ const saveNote = () => {
   } else {
     // 新增模式
     const addData = {
-      images: photoList.value,
+      images: photoList.value.map(img => img.url),
       categoryId: classify.value,
       content: content.value,
       note: note.value

@@ -45,7 +45,7 @@
 					</view>
           <text class="data-label">复习进度</text>
         </view>
-        <text class="data-value">67%</text>
+        <text class="data-value">{{ userInfo.progress }}%</text>
       </view>
     </view>
     
@@ -55,9 +55,42 @@
     </view>
 		
 		<view class="study-data">
-      <view class="setting-item">
-        <text class="setting-label">复习提醒设置</text>
+      <view class="setting-item" @click="showFeedbackDialog">
+        <text class="setting-label">反馈建议</text>
       </view>
+		</view>
+		
+		<!-- 反馈建议弹窗 -->
+		<view v-if="showDialog" class="dialog-overlay" @click="closeDialog">
+			<view class="dialog-content" @click.stop>
+				<view class="dialog-header">
+					<text class="dialog-title">反馈建议</text>
+					<text class="dialog-close" @click="closeDialog">×</text>
+				</view>
+				<view class="dialog-body">
+					<view class="form-item">
+						<text class="form-label">反馈内容 *</text>
+						<textarea 
+							class="form-textarea" 
+							placeholder="请输入您的反馈建议" 
+							v-model="feedbackForm.content"
+							@input="handleInput"
+						></textarea>
+					</view>
+					<view class="form-item">
+						<text class="form-label">联系方式</text>
+						<input 
+							class="form-input" 
+							placeholder="请输入您的微信或邮箱" 
+							v-model="feedbackForm.contact"
+						></input>
+					</view>
+				</view>
+				<view class="dialog-footer">
+					<view class="dialog-button cancel" @click="closeDialog">取消</view>
+					<view class="dialog-button confirm" @click="submitFeedback" :class="{ disabled: !feedbackForm.content.trim() }">提交</view>
+				</view>
+			</view>
 		</view>
   </view>
 </template>
@@ -66,6 +99,9 @@
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { login, getUserInfo } from '../../api/user'
+import { noteStats } from '../../api/note'
+import { addFeedback } from '../../api/feedback'
+
 // 响应式变量
 const isLoggedIn = ref(false)
 const userInfo = ref({
@@ -73,25 +109,37 @@ const userInfo = ref({
   slogan: '',
   studyGoal: '',
   streakDays: 0,
+  progress: 0,
+})
+// 反馈建议相关
+const showDialog = ref(false)
+const feedbackForm = ref({
+  content: '',
+  contact: ''
 })
 
 // 检查登录状态
 const checkLoginStatus = () => {
   // 这里可以从本地存储或后端检查登录状态
-  const userId = uni.getStorageSync('userInfoId')
-  if (userId) {
+  const token = uni.getStorageSync('token')
+  if (token) {
     isLoggedIn.value = true
     // 获取用户详情
-    getUserInfo(userId).then(userRes => {
+    getUserInfo().then(userRes => {
       if (userRes.isSuccess) {
         // 只更新需要的字段
         userInfo.value = {
-          ...userInfo.value,
           nickName: userRes.data.nickName,
           slogan: userRes.data.slogan,
           studyGoal: userRes.data.studyGoal,
           streakDays: userRes.data.streakDays
         }
+      }
+    })
+    // 获取统计数据
+    noteStats().then(res => {
+      if (res.isSuccess) {
+        userInfo.value.progress = res.data.progress
       }
     })
   }
@@ -141,6 +189,63 @@ const handleLogin = () => {
 onShow(() => {
   checkLoginStatus()
 })
+
+// 显示反馈建议弹窗
+const showFeedbackDialog = () => {
+  showDialog.value = true
+  // 重置表单
+  feedbackForm.value = {
+    content: '',
+    contact: ''
+  }
+}
+
+// 关闭弹窗
+const closeDialog = () => {
+  showDialog.value = false
+}
+
+// 处理输入
+const handleInput = () => {
+  // 可以在这里添加输入验证逻辑
+}
+
+// 提交反馈
+const submitFeedback = () => {
+  // 验证必填项
+  if (!feedbackForm.value.content.trim()) {
+    uni.showToast({
+      title: '请输入反馈内容',
+      icon: 'none'
+    })
+    return
+  }
+  
+  // 调用反馈接口
+  addFeedback(feedbackForm.value).then(res => {
+    if (res.isSuccess) {
+      uni.showToast({
+        title: '提交成功，感谢您的反馈',
+        icon: 'success'
+      })
+      
+      // 关闭弹窗
+      setTimeout(() => {
+        closeDialog()
+      }, 1500)
+    } else {
+      uni.showToast({
+        title: '提交失败，请重试',
+        icon: 'none'
+      })
+    }
+  }).catch(err => {
+    uni.showToast({
+      title: '提交失败，请重试',
+      icon: 'none'
+    })
+  })
+}
 </script>
 
 <style scoped lang="scss">
@@ -276,6 +381,119 @@ onShow(() => {
 		.setting-label {
 			font-size: 28rpx;
 			color: #364153;
+		}
+	}
+	
+	/* 反馈建议弹窗样式 */
+	.dialog-overlay {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background-color: rgba(0, 0, 0, 0.5);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 9999;
+	}
+	
+	.dialog-content {
+		width: 80%;
+		max-width: 600rpx;
+		background-color: #fff;
+		border-radius: 20rpx;
+		overflow: hidden;
+		
+		.dialog-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			padding: 30rpx;
+			border-bottom: 1rpx solid #f0f0f0;
+			
+			.dialog-title {
+				font-size: 32rpx;
+				font-weight: 600;
+				color: #364153;
+			}
+			
+			.dialog-close {
+				font-size: 40rpx;
+				color: #9ca4b1;
+				cursor: pointer;
+			}
+		}
+		
+		.dialog-body {
+			padding: 30rpx;
+			
+			.form-item {
+				margin-bottom: 30rpx;
+				
+				.form-label {
+					display: block;
+					font-size: 28rpx;
+					color: #364153;
+					margin-bottom: 10rpx;
+				}
+				
+				.form-textarea {
+					width: 98%;
+					height: 200rpx;
+          padding: 15rpx 0 15rpx 15rpx;
+					border: 1rpx solid #e0e0e0;
+					border-radius: 10rpx;
+					font-size: 26rpx;
+					color: #364153;
+					resize: none;
+				}
+				
+				.form-input {
+					width: 98%;
+					height: 80rpx;
+          padding: 15rpx 0 15rpx 15rpx;
+					border: 1rpx solid #e0e0e0;
+					border-radius: 10rpx;
+					font-size: 26rpx;
+					color: #364153;
+				}
+			}
+		}
+		
+		.dialog-footer {
+			display: flex;
+			padding: 30rpx;
+			border-top: 1rpx solid #f0f0f0;
+			gap: 20rpx;
+			
+			.dialog-button {
+				flex: 1;
+				height: 80rpx;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				border-radius: 10rpx;
+				font-size: 28rpx;
+				font-weight: 500;
+				cursor: pointer;
+				
+				&.cancel {
+					background-color: #f0f0f0;
+					color: #364153;
+				}
+				
+				&.confirm {
+					background-color: #3a7afe;
+					color: #fff;
+					
+					&.disabled {
+						background-color: #e0e0e0;
+						color: #9ca4b1;
+						cursor: not-allowed;
+					}
+				}
+			}
 		}
 	}
 }

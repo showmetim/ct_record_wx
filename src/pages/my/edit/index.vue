@@ -44,13 +44,12 @@ const formData = ref({
 
 // 页面加载时获取用户信息
 onLoad(() => {
-  const userId = uni.getStorageSync('userInfoId')
-  if (userId) {
+  const token = uni.getStorageSync('token')
+  if (token) {
     // 调用接口获取最新用户信息
-    getUserInfo(userId).then(res => {
+    getUserInfo().then(res => {
       if (res.isSuccess) {
         formData.value = {
-          id: res.data.id || '',
           nickName: res.data.nickName || '',
           slogan: res.data.slogan || '',
           studyGoal: res.data.studyGoal || ''
@@ -76,8 +75,8 @@ const handleSave = () => {
     return
   }
   
-  const userId = uni.getStorageSync('userInfoId')
-  if (userId) {
+  const token = uni.getStorageSync('token')
+  if (token) {
     // 调用接口更新用户信息
     updateUserInfo(formData.value).then(res => {
       if (res.isSuccess) {

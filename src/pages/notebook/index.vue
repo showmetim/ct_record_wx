@@ -15,16 +15,43 @@
     
     <!-- 搜索和筛选 -->
     <view class="search-container" v-if="activeTab === 'all'">
-      <view class="search-box flex items-center">
+      <view class="search-row flex items-center">
         <input 
           type="text" 
-          placeholder="错题搜索" 
+          placeholder="搜索错题" 
           class="search-input" 
           v-model="keyword"
           @confirm="handleSearch"
         />
-        <view class="search-btn" @click="handleSearch">搜索</view>
+        <view class="search-btn" @click="handleSearch">
+          <image src="/static/images/search_icon.png" mode="aspectFit" class="icon" />
+        </view>
+        <view class="category-btn" @click="toggleCategoryList">
+          <image src="/static/images/classify_icon.png" mode="aspectFit" class="icon" />
+        </view>
       </view>
+      
+      <!-- 分类tab -->
+      <scroll-view v-if="showCategoryList" class="category-tabs" scroll-x="true" show-scrollbar="false">
+        <view class="category-tab-list">
+          <view 
+            class="category-tab-item" 
+            :class="{ active: selectedCategoryId === '' }" 
+            @click="selectCategory('')"
+          >
+            全部
+          </view>
+          <view 
+            v-for="category in categories" 
+            :key="category.id"
+            class="category-tab-item" 
+            :class="{ active: selectedCategoryId === category.id }"
+            @click="selectCategory(category.id)"
+          >
+            {{ category.name }}
+          </view>
+        </view>
+      </scroll-view>
     </view>
     
     <!-- 统计数据 -->
@@ -35,7 +62,7 @@
       </view>
       <view class="stat-item" :class="{ active: activeStat === 'LEARNING' }" @click="handleStatClick('LEARNING')">
         <text class="stat-number blue">{{ learning }}</text>
-        <text class="stat-label">待复习</text>
+        <text class="stat-label">复习中</text>
       </view>
       <view class="stat-item" :class="{ active: activeStat === 'MASTERED' }" @click="handleStatClick('MASTERED')">
         <text class="stat-number green">{{ mastered }}</text>
@@ -78,6 +105,7 @@ import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import MistakeItem from '../../components/MistakeItem.vue'
 import { getNoteList, noteStats } from '../../api/note'
+import { getCategoryList } from '../../api/category'
 
 // 响应式变量
 const activeTab = ref('all')
@@ -95,6 +123,10 @@ const pageSize = ref(10)
 const loading = ref(false)
 const finished = ref(false)
 const activeStat = ref('')
+// 分类相关
+const categories = ref([])
+const showCategoryList = ref(false)
+const selectedCategoryId = ref('')
 
 // 格式化时间
 const formatTime = (time) => {
@@ -125,7 +157,9 @@ const goToDetail = (id) => {
 
 // 获取统计数据
 const getStats = () => {
-  noteStats().then(res => {
+  noteStats({
+    categoryId: selectedCategoryId.value
+  }).then(res => {
     if (res.isSuccess) {
       total.value = res.data.total
       learning.value = res.data.learning
@@ -147,7 +181,8 @@ const getMistakes = (isLoadMore = false) => {
     pageSize: pageSize.value,
     keyword: keyword.value,
     status: status.value,
-    reviewToday: reviewToday.value
+    reviewToday: reviewToday.value,
+    categoryId: selectedCategoryId.value
   }
   
   getNoteList(params).then(res => {
@@ -190,12 +225,15 @@ const switchTab = (tab) => {
     status.value = ''
     keyword.value = ''
     activeStat.value = ''
+    selectedCategoryId.value = ''
   } else {
     reviewToday.value = false
   }
   // 重置参数
   page.value = 1
   finished.value = false
+  // 隐藏分类列表
+  showCategoryList.value = false
   // 获取数据
   getMistakes()
 }
@@ -211,11 +249,43 @@ const handleStatClick = (statStatus) => {
   getMistakes()
 }
 
+// 切换分类列表显示/隐藏
+const toggleCategoryList = () => {
+  showCategoryList.value = !showCategoryList.value
+  // 如果要显示分类列表，先获取分类数据
+  if (showCategoryList.value) {
+    getCategories()
+  }
+}
+
+// 选择分类
+const selectCategory = (categoryId) => {
+  selectedCategoryId.value = categoryId
+  // 重置参数
+  page.value = 1
+  finished.value = false
+  // 获取数据
+  getMistakes()
+  // 获取统计数据
+  getStats()
+}
+
+// 获取分类列表
+const getCategories = () => {
+  getCategoryList().then(res => {
+    if (res.isSuccess) {
+      categories.value = res.data
+    }
+  })
+}
+
 // 搜索
 const handleSearch = () => {
   // 重置参数
   page.value = 1
   finished.value = false
+  // 隐藏分类列表
+  showCategoryList.value = false
   // 获取数据
   getMistakes()
 }
@@ -231,6 +301,8 @@ const onReachBottom = () => {
 onShow(() => {
   // 获取统计数据
   getStats()
+  // 获取分类列表
+  getCategories()
   // 获取错题列表
   getMistakes()
 })
@@ -290,20 +362,66 @@ onShow(() => {
   
   .search-container {
     margin-bottom: 30rpx;
-    .search-box {
-      border-radius: 15rpx;
-      padding: 15rpx 20rpx;
-		background-color: #f8f9fa;
+    .search-row {
+      display: flex;
+      align-items: center;
+      gap: 15rpx;
+      
       .search-input {
         flex: 1;
+        border-radius: 15rpx;
+        padding: 15rpx 20rpx;
         font-size: 28rpx;
         color: #333;
+        border: none;
+        outline: none;
+        background-color: #f8f9fa;
       }
-      .search-btn {
-        margin-left: 15rpx;
-        font-size: 28rpx;
-        color: #3a7afe;
-        font-weight: 500;
+      
+      .category-btn, .search-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 15rpx;
+        background-color: #f8f9fa;
+        border-radius: 15rpx;
+        
+        .icon {
+          width: 36rpx;
+          height: 36rpx;
+        }
+      }
+    }
+    
+    .category-tabs {
+      margin-top: 15rpx;
+      width: 100%;
+      white-space: nowrap;
+      
+      .category-tab-list {
+        display: flex;
+        gap: 15rpx;
+        padding-bottom: 10rpx;
+        
+        .category-tab-item {
+          padding: 10rpx 20rpx;
+          font-size: 26rpx;
+          color: #666;
+          background-color: #f0f0f0;
+          border-radius: 20rpx;
+          cursor: pointer;
+          transition: all 0.3s;
+          white-space: nowrap;
+          
+          &:hover {
+            background-color: #e0e0e0;
+          }
+          
+          &.active {
+            background-color: #3a7afe;
+            color: #fff;
+          }
+        }
       }
     }
   }

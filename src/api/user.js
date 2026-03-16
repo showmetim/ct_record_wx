@@ -8,8 +8,8 @@ export const login = (code) => {
 };
 
 // 获取用户信息
-export const getUserInfo = (userId) => {
-  return request.get(`users/detail/${userId}`);
+export const getUserInfo = () => {
+  return request.get(`users/detail`);
 };
 
 // 更新用户信息

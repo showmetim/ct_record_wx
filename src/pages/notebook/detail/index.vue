@@ -5,8 +5,13 @@
       <view class="category-tag" :style="{ backgroundColor: mistakeData.classify?.bgColor || '#3a7afe' }">
         {{ mistakeData.classify?.name || '未分类' }}
       </view>
-      <view class="edit-button" @click="goToEdit">
-        <text class="edit-button-text">编辑</text>
+      <view class="action-buttons flex items-center">
+        <view class="edit-button" @click="goToEdit">
+          <text class="edit-button-text">编辑</text>
+        </view>
+        <view class="delete-button" @click="confirmDelete">
+          <text class="delete-button-text">删除</text>
+        </view>
       </view>
     </view>
 
@@ -36,11 +41,11 @@
       <view class="section-title">记录</view>
       <view class="record-item">
         <text class="record-label">创建时间</text>
-        <text class="record-value">{{ formatTime(mistakeData.createTime) }}</text>
+        <text class="record-value">{{ formatTime(mistakeData.createdAt) }}</text>
       </view>
       <view class="record-item">
         <text class="record-label">最近复习</text>
-        <text class="record-value">{{ formatTime(mistakeData.reviewTime || mistakeData.createTime) }}</text>
+        <text class="record-value">{{ formatTime(mistakeData.lastReviewTime) }}</text>
       </view>
     </view>
 
@@ -54,17 +59,17 @@
 
 <script setup>
 import { ref } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
-import { getNoteDetail, reviewNote, masteredNote } from '../../../api/note'
+import { onLoad, onShow } from '@dcloudio/uni-app'
+import { getNoteDetail, reviewNote, masteredNote, deleteNote } from '../../../api/note'
 
 // 路由参数
 const routeParams = ref({ id: '' })
+// 是否首次加载
+const isFirstLoad = ref(true)
 
-// 页面加载时获取数据
-onLoad((options) => {
-  routeParams.value = options
-  // 获取错题详情
-  getNoteDetail(options.id).then(res => {
+// 获取错题详情
+const fetchNoteDetail = (id) => {
+  getNoteDetail(id).then(res => {
     if (res.isSuccess) {
       const data = res.data
       mistakeData.value = {
@@ -76,11 +81,30 @@ onLoad((options) => {
         imgList: data.images ? data.images.map(img => img.url) : [],
         remark: data.note || '',
         overview: data.content || '',
-        createTime: data.createdAt,
-        reviewTime: data.lastReviewTime || data.createdAt
+        createdAt: data.createdAt,
+        lastReviewTime: data.lastReviewTime
       }
     }
+    // 首次加载完成后设置为非首次加载
+    if (isFirstLoad.value) {
+      isFirstLoad.value = false
+    }
   })
+}
+
+// 页面加载时获取数据
+onLoad((options) => {
+  routeParams.value = options
+  // 获取错题详情
+  fetchNoteDetail(options.id)
+})
+
+// 页面显示时重新获取数据
+onShow(() => {
+  // 非首次加载且有id时才重新获取数据
+  if (!isFirstLoad.value && routeParams.value.id) {
+    fetchNoteDetail(routeParams.value.id)
+  }
 })
 
 // 错题数据
@@ -93,8 +117,8 @@ const mistakeData = ref({
   imgList: [],
   remark: '',
   overview: '',
-  createTime: new Date().toISOString(),
-  reviewTime: new Date().toISOString()
+  createdAt: '',
+  lastReviewTime: ''
 })
 
 // 格式化时间
@@ -121,9 +145,9 @@ const previewImage = (current, index) => {
 const markAsReviewed = () => {
   reviewNote(routeParams.value.id).then(res => {
     if (res.isSuccess) {
-      mistakeData.value.reviewTime = new Date().toISOString()
+      mistakeData.value.lastReviewTime = res.data.lastReviewTime
       uni.showToast({
-        title: '已标记为已复习',
+        title: res.msg,
         icon: 'success'
       })
     } else {
@@ -170,6 +194,35 @@ const goToEdit = () => {
     url: `/pages/notebook/edit/index?id=${routeParams.value.id}`
   })
 }
+
+// 确认删除
+const confirmDelete = () => {
+  uni.showModal({
+    title: '确认删除',
+    content: '确定要删除这道错题吗？',
+    success: (res) => {
+      if (res.confirm) {
+        deleteNote(routeParams.value.id).then(res => {
+          if (res.isSuccess) {
+            uni.showToast({
+              title: '删除成功',
+              icon: 'success'
+            })
+            // 延时返回上一页
+            setTimeout(() => {
+              uni.navigateBack()
+            }, 1500)
+          } else {
+            uni.showToast({
+              title: '删除失败，请重试',
+              icon: 'none'
+            })
+          }
+        })
+      }
+    }
+  })
+}
 </script>
 
 <style lang="scss" scoped>
@@ -180,27 +233,39 @@ const goToEdit = () => {
 }
 
 .category-section {
-  padding: 20rpx;
-  background-color: #fff;
-  margin-bottom: 20rpx;
-  border-radius: 20rpx;
-  .category-tag {
-    display: inline-block;
-    padding: 8rpx 20rpx;
+    padding: 20rpx;
+    background-color: #fff;
+    margin-bottom: 20rpx;
     border-radius: 20rpx;
-    color: #fff;
-    font-size: 28rpx;
-  }
-  .edit-button {
-    padding: 8rpx 20rpx;
-    border-radius: 20rpx;
-    background-color: #f0f0f0;
-    .edit-button-text {
+    .category-tag {
+      display: inline-block;
+      padding: 8rpx 20rpx;
+      border-radius: 20rpx;
+      color: #fff;
       font-size: 28rpx;
-      color: #333;
+    }
+    .action-buttons {
+      gap: 15rpx;
+    }
+    .edit-button {
+      padding: 8rpx 20rpx;
+      border-radius: 20rpx;
+      background-color: #f0f0f0;
+      .edit-button-text {
+        font-size: 28rpx;
+        color: #333;
+      }
+    }
+    .delete-button {
+      padding: 8rpx 20rpx;
+      border-radius: 20rpx;
+      background-color: #f0f0f0;
+      .delete-button-text {
+        font-size: 28rpx;
+        color: #ff3b30;
+      }
     }
   }
-}
 
 .image-section {
   background-color: #fff;

@@ -38,8 +38,10 @@ export const masteredNote = (userId) => {
 };
 
 // 统计
-export const noteStats = () => {
-  return request.get(`notes/stats`);
+export const noteStats = (data) => {
+  return request.get(`notes/stats`, {
+    params: data
+  });
 };
 
 // 上传图片

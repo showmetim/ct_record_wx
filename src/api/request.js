@@ -1,12 +1,16 @@
 // 基础配置
 const baseURL = import.meta.env.VITE_API_BASE_URL;
 const timeout = 10000;
+
+// 防止重复登录
+let loginPromise = null;
+
 // 请求拦截器
 function requestInterceptor(config) {
   // 可以在这里添加 token 等认证信息
-  const userInfoId = uni.getStorageSync('userInfoId');
-  if (userInfoId) {
-    config.header.userId = userInfoId;
+  const token = uni.getStorageSync('token');
+  if (token) {
+    config.header.Authorization  = `Bearer ${token}`;
   }
   return config;
 }
@@ -21,10 +25,49 @@ function responseInterceptor(response) {
   }
   return res;
 }
+function login() {
+  if (loginPromise) return loginPromise;
+  loginPromise = new Promise((resolve, reject) => {
+    const token = uni.getStorageSync('token');
+    // 已登录
+    if (token) {
+      resolve(token);
+      return;
+    }
+    uni.login({
+      provider: 'weixin',
+      success: (loginRes) => {
+        uni.request({
+          url: baseURL + "users/login",
+          method: "POST",
+          data: {
+            code: loginRes.code
+          },
+          success: (res) => {
+            const result = res.data;
+            if (result.code === 200) {
+              const token = result.data.token;
+              uni.setStorageSync('token', token);
+              resolve(token);
+            } else {
+              reject(result.msg || "登录失败");
+            }
+          },
+          fail: reject
+        });
+      },
+      fail: reject
+    });
+  });
+  return loginPromise;
+}
+
 
 // 创建请求服务
 const service = {
-  request(config) {
+  async request(config) {
+    // 登录
+    await login();
     // 合并默认配置
     const options = {
       url: baseURL + config.url,

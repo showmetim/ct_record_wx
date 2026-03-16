@@ -3,6 +3,9 @@
     <view class="header">
       <text class="title">{{ title }}</text>
     </view>
+    <view class="review-info">
+      <text class="review-text">今日待复习{{ todayReview }}题</text>
+    </view>
     <view class="photo flex flex-column flex-center">
       <view class="photo-item flex flex-center" @click="toEditNotebook">
         <image src="/static/images/camera.png" alt="" />
@@ -36,11 +39,12 @@
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import MistakeItem from '../../components/MistakeItem.vue'
-import { getNoteList } from '../../api/note'
+import { getNoteList, noteStats } from '../../api/note'
 
 // 响应式变量
 const title = ref('今天也要稳稳上岸')
 const mistakeList = ref([])
+const todayReview = ref(0)
 
 // 格式化时间
 const formatTime = (dateString) => {
@@ -85,6 +89,13 @@ const goToDetail = (id) => {
 
 // 页面加载时的逻辑
 onShow(() => {
+  // 获取统计数据
+  noteStats().then(res => {
+    if (res.isSuccess) {
+      todayReview.value = res.data.todayReview
+    }
+  })
+  
   // 获取错题列表
   getNoteList({ page: 1, pageSize: 3 }).then(res => {
     if (res.isSuccess) {
@@ -106,34 +117,42 @@ onShow(() => {
 
 <style scoped lang="scss">
 .page {
-  display: flex;
-  flex-direction: column;
-  padding: 30rpx;
-  .title {
-    font-size: 38rpx;
-    color: #1c2636;
-    font-weight: 500;
-  }
-  .photo {
-    padding: 50rpx 0 30rpx;
-    gap: 30rpx;
-    .photo-item {
-      width: 300rpx;
-      height: 300rpx;
-      border-radius: 50%;
-      background-color: #3a7afe;
-      image {
-        width: 100rpx;
-        height: 100rpx;
-      }
-    }
-    .photo-text {
-      font-size: 30rpx;
-      color: #364153;
+    display: flex;
+    flex-direction: column;
+    padding: 30rpx;
+    .title {
+      font-size: 38rpx;
+      color: #1c2636;
       font-weight: 500;
     }
+    .review-info {
+      margin-top: 5rpx;
+      .review-text {
+        font-size: 26rpx;
+        color: #b3b9c3;
+        font-weight: 500;
+      }
+    }
+    .photo {
+      padding: 50rpx 0 30rpx;
+      gap: 30rpx;
+      .photo-item {
+        width: 300rpx;
+        height: 300rpx;
+        border-radius: 50%;
+        background-color: #3a7afe;
+        image {
+          width: 100rpx;
+          height: 100rpx;
+        }
+      }
+      .photo-text {
+        font-size: 30rpx;
+        color: #364153;
+        font-weight: 500;
+      }
 
-  }
+    }
 
   .recent-mistakes {
     margin-top: 30rpx;

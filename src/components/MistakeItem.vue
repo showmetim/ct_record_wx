@@ -6,14 +6,14 @@
     <view class="mistake-content flex-1">
       <view class="mistake-top flex justify-between">
         <view class="category-tag" :style="{ backgroundColor: bgColor }">{{ category }}</view>
-        <text class="time">{{ time }}</text>
+        <view class="status-tag" :class="status">
+          {{ statusText }}
+        </view>
       </view>
       <text class="mistake-text">{{ content }}</text>
       <view class="mistake-footer flex justify-between items-center">
         <text class="mistake-count">复习{{ reviewCount }}次</text>
-        <view class="status-tag" :class="status">
-          {{ statusText }}
-        </view>
+        <text class="time">{{ time }}</text>
       </view>
     </view>
   </view>
@@ -58,10 +58,10 @@ const emit = defineEmits(['click'])
 // 根据状态值获取中文文本
 const statusText = computed(() => {
   const statusMap = {
-    LEARNING: '待复习',
+    LEARNING: '复习中',
     MASTERED: '已掌握'
   }
-  return statusMap[props.status] || '待复习'
+  return statusMap[props.status] || '复习中'
 })
 </script>
 
@@ -93,10 +93,6 @@ const statusText = computed(() => {
         font-size: 20rpx;
         color: #fff;
       }
-      .time {
-        font-size: 20rpx;
-        color: #9ca4b1;
-      }
     }
     .mistake-text {
       font-size: 24rpx;
@@ -116,14 +112,18 @@ const statusText = computed(() => {
     .mistake-footer {
       margin-top: 10rpx;
     }
+    .time {
+      font-size: 20rpx;
+      color: #9ca4b1;
+    }
     .status-tag {
       border-radius: 10rpx;
       font-size: 20rpx;
       &.LEARNING {
-        color: #ff9500;
+        color: #ff6900;
       }
       &.MASTERED {
-        color: #4cd964;
+        color: #00c950;
       }
     }
   }
