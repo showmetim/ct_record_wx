@@ -56,6 +56,9 @@
 		
 		<view class="study-data">
       <view class="setting-item" @click="showFeedbackDialog">
+        <view class="data-icon">
+          <image src="/static/images/question_icon.png" alt="反馈建议"  />
+        </view>
         <text class="setting-label">反馈建议</text>
       </view>
 		</view>
@@ -97,10 +100,17 @@
 
 <script setup>
 import { ref } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onShow, onShareAppMessage } from '@dcloudio/uni-app'
 import { login, getUserInfo } from '../../api/user'
 import { noteStats } from '../../api/note'
 import { addFeedback } from '../../api/feedback'
+
+onShareAppMessage(() => {
+  return {
+    title: '一款轻量的错题笔记本，快来试试吧！',
+    path: '/pages/my/index'
+  }
+})
 
 // 响应式变量
 const isLoggedIn = ref(false)
@@ -128,12 +138,10 @@ const checkLoginStatus = () => {
     getUserInfo().then(userRes => {
       if (userRes.isSuccess) {
         // 只更新需要的字段
-        userInfo.value = {
-          nickName: userRes.data.nickName,
-          slogan: userRes.data.slogan,
-          studyGoal: userRes.data.studyGoal,
-          streakDays: userRes.data.streakDays
-        }
+        userInfo.value.nickName = userRes.data.nickName
+        userInfo.value.slogan = userRes.data.slogan
+        userInfo.value.studyGoal = userRes.data.studyGoal
+        userInfo.value.streakDays = userRes.data.streakDays
       }
     })
     // 获取统计数据
@@ -295,8 +303,8 @@ const submitFeedback = () => {
       flex-direction: column;
       align-items: center;
       .avatar {
-        width: 120rpx;
-        height: 120rpx;
+        width: 230rpx;
+        height: 230rpx;
         border-radius: 50%;
         background-color: #3a7afe;
         display: flex;
@@ -305,19 +313,19 @@ const submitFeedback = () => {
         margin-bottom: 20rpx;
         overflow: hidden;
         .avatar-text {
-          font-size: 48rpx;
+          font-size: 70rpx;
           font-weight: 600;
           color: #fff;
         }
       }
       .user-name {
-        font-size: 32rpx;
+        font-size: 45rpx;
         font-weight: 500;
         color: #1c2636;
         margin-bottom: 10rpx;
       }
       .user-desc {
-        font-size: 24rpx;
+        font-size: 28rpx;
         color: #9ca4b1;
       }
     }
@@ -373,8 +381,19 @@ const submitFeedback = () => {
   }
 	.setting-item {
 		display: flex;
-		justify-content: space-between;
 		align-items: center;
+    .data-icon {
+      width: 35rpx;
+      height: 35rpx;
+      margin-right: 15rpx;
+      background: #fff;
+      border-radius: 15rpx;
+      padding: 5rpx;
+      image {
+        width: 100%;
+        height: 100%;
+      }
+    }
 		&:not(:last-child) {
 			border-bottom: 1rpx solid #f0f0f0;
 		}

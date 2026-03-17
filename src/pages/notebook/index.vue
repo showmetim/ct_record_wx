@@ -7,8 +7,8 @@
           全部
         </view>
         <view class="tab-item" :class="{ active: activeTab === 'today' }" @click="switchTab('today')">
-          今日复习
-          <view class="badge" v-if="todayReview > 0">{{ todayReview }}</view>
+          今日待复习
+          <view class="badge">{{ todayReview }}</view>
         </view>
       </view>
     </view>
@@ -18,7 +18,7 @@
       <view class="search-row flex items-center">
         <input 
           type="text" 
-          placeholder="搜索错题" 
+          placeholder="搜索内容或备注" 
           class="search-input" 
           v-model="keyword"
           @confirm="handleSearch"
@@ -102,10 +102,17 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onShow, onShareAppMessage } from '@dcloudio/uni-app'
 import MistakeItem from '../../components/MistakeItem.vue'
 import { getNoteList, noteStats } from '../../api/note'
 import { getCategoryList } from '../../api/category'
+
+onShareAppMessage(() => {
+  return {
+    title: '一款轻量的错题笔记本，快来试试吧！',
+    path: '/pages/notebook/index'
+  }
+})
 
 // 响应式变量
 const activeTab = ref('all')

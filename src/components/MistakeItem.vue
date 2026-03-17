@@ -12,7 +12,7 @@
       </view>
       <text class="mistake-text">{{ content }}</text>
       <view class="mistake-footer flex justify-between items-center">
-        <text class="mistake-count">复习{{ reviewCount }}次</text>
+        <text class="mistake-count">复习<text class="review-count"> {{ reviewCount }} </text>次</text>
         <text class="time">{{ time }}</text>
       </view>
     </view>
@@ -108,6 +108,10 @@ const statusText = computed(() => {
     .mistake-count {
       font-size: 23rpx;
       color: #364153;
+      .review-count {
+        padding: 0 5rpx;
+        font-weight: 600;
+      }
     }
     .mistake-footer {
       margin-top: 10rpx;

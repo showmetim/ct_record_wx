@@ -484,8 +484,10 @@ const saveNote = () => {
     }
     .delete-icon {
       color: #fff;
-      font-size: 35rpx;
+      font-size: 31rpx;
       font-weight: bold;
+      line-height: 1;
+      text-align: center;
     }
   }
   .classify {
@@ -505,11 +507,13 @@ const saveNote = () => {
         padding-top: 15rpx;
         padding-right: 15rpx;
         .classify-item {
-          padding: 15rpx 25rpx;
+          padding: 10rpx 25rpx;
           background-color: #f9fafb;
           border-radius: 20rpx;
           margin-right: 15rpx;
           position: relative;
+          display: flex;
+          align-items: center;
           &.active {
             background-color: #3a7afe;
           }
@@ -545,7 +549,8 @@ const saveNote = () => {
         }
         .category-delete-icon {
           color: #fff;
-          font-size: 23rpx;
+          font-size: 22rpx;
+          line-height: 1;
           font-weight: bold;
         }
       }

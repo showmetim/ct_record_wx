@@ -28,6 +28,7 @@
           :time="item.time"
           :content="item.content"
           :review-count="item.reviewCount"
+          :status="item.status"
           @click="goToDetail(item.id)"
         />
       </view>
@@ -37,12 +38,12 @@
 
 <script setup>
 import { ref } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onShow,onShareAppMessage } from '@dcloudio/uni-app'
 import MistakeItem from '../../components/MistakeItem.vue'
 import { getNoteList, noteStats } from '../../api/note'
 
 // 响应式变量
-const title = ref('今天也要稳稳上岸')
+const title = ref('今天也要好好复习')
 const mistakeList = ref([])
 const todayReview = ref(0)
 
@@ -86,6 +87,14 @@ const goToDetail = (id) => {
   })
 }
 
+// 分享应用
+onShareAppMessage(() => {
+  return {
+    title: '一款轻量的错题笔记本，快来试试吧！',
+    path: '/pages/index/index'
+  }
+})
+
 
 // 页面加载时的逻辑
 onShow(() => {
@@ -108,7 +117,8 @@ onShow(() => {
         bgColor: item.category ? item.category.color : '#3a7afe',
         time: formatTime(item.createdAt),
         content: item.content || '无内容概述',
-        reviewCount: item.reviewCount || 0
+        reviewCount: item.reviewCount || 0,
+        status: item.status
       }))
     }
   })

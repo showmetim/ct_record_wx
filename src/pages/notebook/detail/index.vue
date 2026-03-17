@@ -27,13 +27,17 @@
     <!-- 内容概述 -->
     <view class="content-section" v-if="mistakeData.overview">
       <view class="section-title">内容概述</view>
-      <view class="content-text">{{ mistakeData.overview }}</view>
+      <view class="content-text">
+        <text user-select>{{ mistakeData.overview }}</text>
+      </view>
     </view>
 
     <!-- 备注 -->
     <view class="notes-section" v-if="mistakeData.remark">
       <view class="section-title">我的备注</view>
-      <view class="notes-content">{{ mistakeData.remark }}</view>
+      <view class="notes-content">
+        <text user-select>{{ mistakeData.remark }}</text>
+      </view>
     </view>
 
     <!-- 记录 -->
@@ -52,7 +56,7 @@
     <!-- 底部按钮 -->
     <view class="bottom-buttons">
       <view class="button mastered" @click="markAsMastered">已掌握</view>
-      <view class="button reviewed" @click="markAsReviewed">复习+1</view>
+      <view class="button reviewed" @click="markAsReviewed" :animation="animationData">复习+1</view>
     </view>
   </view>
 </template>
@@ -66,6 +70,27 @@ import { getNoteDetail, reviewNote, masteredNote, deleteNote } from '../../../ap
 const routeParams = ref({ id: '' })
 // 是否首次加载
 const isFirstLoad = ref(true)
+// 动画数据
+const animationData = ref({})
+
+// 创建动画
+const createAnimation = () => {
+  // 重置动画数据
+  animationData.value = {}
+  
+  setTimeout(() => {
+    const animation = uni.createAnimation({
+      duration: 300,
+      timingFunction: 'ease-in-out'
+    })
+    
+    animation.scale(0.9).step()
+    animation.scale(1.1).step()
+    animation.scale(1).step()
+    
+    animationData.value = animation.export()
+  }, 0)
+}
 
 // 获取错题详情
 const fetchNoteDetail = (id) => {
@@ -143,6 +168,9 @@ const previewImage = (current, index) => {
 
 // 标记为已复习
 const markAsReviewed = () => {
+  // 触发动画效果
+  createAnimation()
+  
   reviewNote(routeParams.value.id).then(res => {
     if (res.isSuccess) {
       mistakeData.value.lastReviewTime = res.data.lastReviewTime
@@ -161,9 +189,12 @@ const markAsReviewed = () => {
 
 // 标记为已掌握
 const markAsMastered = () => {
+  // 触发动画效果
+  createAnimation()
+  
   uni.showModal({
     title: '确认',
-    content: '确定要标记为已掌握吗？标记后将从错题集中移除。',
+    content: '确定要标记为已掌握吗？',
     success: (res) => {
       if (res.confirm) {
         masteredNote(routeParams.value.id).then(res => {
@@ -248,22 +279,36 @@ const confirmDelete = () => {
       gap: 15rpx;
     }
     .edit-button {
-      padding: 8rpx 20rpx;
-      border-radius: 20rpx;
-      background-color: #f0f0f0;
+      padding: 10rpx 24rpx;
+      border-radius: 24rpx;
+      background-color: #e6f0ff;
+      border: 1rpx solid #c8e0ff;
+      transition: all 0.3s ease;
       .edit-button-text {
         font-size: 28rpx;
-        color: #333;
+        color: #3a7afe;
+        font-weight: 500;
       }
     }
+    .edit-button:active {
+      background-color: #d6e8ff;
+      transform: scale(0.95);
+    }
     .delete-button {
-      padding: 8rpx 20rpx;
-      border-radius: 20rpx;
-      background-color: #f0f0f0;
+      padding: 10rpx 24rpx;
+      border-radius: 24rpx;
+      background-color: #fff2f2;
+      border: 1rpx solid #ffd6d6;
+      transition: all 0.3s ease;
       .delete-button-text {
         font-size: 28rpx;
         color: #ff3b30;
+        font-weight: 500;
       }
+    }
+    .delete-button:active {
+      background-color: #ffe6e6;
+      transform: scale(0.95);
     }
   }
 
