@@ -72,6 +72,7 @@
     
     <!-- 错题列表 -->
     <scroll-view 
+      v-if="activeTab !== 'today'" 
       class="mistakes-container" 
       scroll-y="true" 
       @scrolltolower="onReachBottom"
@@ -97,6 +98,23 @@
         <text>没有更多数据了</text>
       </view>
     </scroll-view>
+    
+    <!-- 今日待复习模式 -->
+    <view v-else class="review-mode-container">
+      <view class="review-mode-header">
+        <view class="review-circle">
+          <view class="review-circle-inner">
+            <text class="review-count">{{ todayReview }}</text>
+          </view>
+        </view>
+        <text class="review-subtitle">根据记忆曲线，今天有 {{ todayReview }} 道错题需要复习</text>
+      </view>
+      
+      <view class="review-mode-button" @click="startReviewMode">
+        <text class="review-mode-text">开启复习模式</text>
+      </view>
+      
+    </view>
   </view>
 </template>
 
@@ -304,8 +322,25 @@ const onReachBottom = () => {
   }
 }
 
+// 开始复习模式
+const startReviewMode = () => {
+  // 获取今日待复习的所有id
+  const reviewIds = mistakeList.value.map(item => item.id).join(',')
+  if (reviewIds) {
+    uni.navigateTo({
+      url: `/pages/notebook/detail/index?id=${reviewIds.split(',')[0]}&reviewIds=${reviewIds}&currentIndex=0`
+    })
+  } else {
+    uni.showToast({
+      title: '今日暂无待复习内容',
+      icon: 'none'
+    })
+  }
+}
+
 // 页面加载时的逻辑
 onShow(() => {
+  activeTab.value = 'all'
   // 获取统计数据
   getStats()
   // 获取分类列表
@@ -441,12 +476,12 @@ onShow(() => {
 		gap: 30rpx;
     .stat-item {
       flex: 1;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-    	padding: 40rpx 30rpx;
-		background-color: #f8f9fa;
-		border-radius: 30rpx;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40rpx 30rpx;
+      background-color: #f8f9fa;
+      border-radius: 30rpx;
       cursor: pointer;
       transition: all 0.3s;
       &:hover {
@@ -489,6 +524,108 @@ onShow(() => {
       padding: 30rpx 0;
       font-size: 24rpx;
       color: #9ca4b1;
+    }
+  }
+  
+  .review-mode-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 30rpx;
+    padding: 40rpx;
+    
+    .review-mode-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20rpx;
+      text-align: center;
+      
+      .review-circle {
+        width: 280rpx;
+        height: 280rpx;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #8b93fe 0%, #667eea 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 6rpx 16rpx rgba(102, 126, 234, 0.3);
+        animation: pulse 2s infinite;
+        
+        .review-circle-inner {
+          width: 210rpx;
+          height: 210rpx;
+          border-radius: 50%;
+          background-color: #fff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: inset 0 3rpx 6rpx rgba(0, 0, 0, 0.1);
+          
+          .review-count {
+            font-size: 48rpx;
+            font-weight: 700;
+            color: #3a7afe;
+          }
+        }
+      }
+      
+      .review-mode-title {
+        font-size: 36rpx;
+        font-weight: 600;
+        color: #333;
+      }
+      
+      .review-subtitle {
+        font-size: 26rpx;
+        color: #666;
+        line-height: 1.4;
+        padding: 0 20rpx;
+        margin-top: 30rpx;
+        text {
+          color: #3a7afe;
+          font-weight: 500;
+        }
+      }
+    }
+    
+    .review-mode-button {
+      background: linear-gradient(135deg, #3a7afe 0%, #2c64e6 100%);
+      color: #fff;
+      font-size: 32rpx;
+      font-weight: 600;
+      padding: 30rpx 80rpx;
+      border-radius: 50rpx;
+      box-shadow: 0 6rpx 16rpx rgba(58, 122, 254, 0.4);
+      transition: all 0.3s ease;
+      margin-top: 20rpx;
+      &:active {
+        transform: scale(0.95);
+        box-shadow: 0 3rpx 8rpx rgba(58, 122, 254, 0.3);
+      }
+    }
+    
+    .estimated-time {
+      font-size: 24rpx;
+      color: #999;
+      margin-top: 10rpx;
+    }
+  }
+  
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+      box-shadow: 0 6rpx 16rpx rgba(102, 126, 234, 0.3);
+    }
+    50% {
+      transform: scale(1.05);
+      box-shadow: 0 8rpx 20rpx rgba(102, 126, 234, 0.5);
+    }
+    100% {
+      transform: scale(1);
+      box-shadow: 0 6rpx 16rpx rgba(102, 126, 234, 0.3);
     }
   }
 }

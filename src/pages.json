@@ -38,6 +38,13 @@
 			"style": {
 				"navigationBarTitleText": "错题详情"
 			}
+		},
+		{
+			"path": "pages/notebook/poster/index",
+			"style": {
+				"navigationBarTitleText": "",
+				"disableScroll": true
+			}
 		}
 	],
 	"tabBar": {

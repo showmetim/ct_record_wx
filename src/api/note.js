@@ -28,8 +28,8 @@ export const deleteNote = (noteId) => {
 };
 
 // 复习笔记
-export const reviewNote = (noteId) => {
-  return request.post(`notes/review/${noteId}`);
+export const reviewNote = (noteId, data) => {
+  return request.post(`notes/review/${noteId}`, data);
 };
 
 // 已掌握笔记
