@@ -84,7 +84,6 @@
 						<text class="form-label">联系方式</text>
 						<input 
 							class="form-input" 
-							placeholder="请输入您的微信或邮箱" 
 							v-model="feedbackForm.contact"
 						></input>
 					</view>

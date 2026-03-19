@@ -341,6 +341,7 @@ const startReviewMode = () => {
 // 页面加载时的逻辑
 onShow(() => {
   activeTab.value = 'all'
+  reviewToday.value = false
   // 获取统计数据
   getStats()
   // 获取分类列表
