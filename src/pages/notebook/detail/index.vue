@@ -78,7 +78,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { getNoteDetail, reviewNote, masteredNote, deleteNote } from '../../../api/note'
 
@@ -272,7 +272,8 @@ const confirmDelete = () => {
 // 处理复习模式下的按钮点击
 const handleReviewAction = (action) => {
   // 标记为已复习
-  reviewNote(routeParams.value.id, { click: action }).then(res => {
+  const currentNoteId = reviewMode.value ? reviewIds.value[currentIndex.value] : routeParams.value.id
+  reviewNote(currentNoteId, { click: action }).then(res => {
     if (res.isSuccess) {
       // 跳转到下一题
       const nextIndex = currentIndex.value + 1
