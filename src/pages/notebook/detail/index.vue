@@ -155,17 +155,21 @@ onLoad((options) => {
     reviewIds.value = options.reviewIds.split(',')
     currentIndex.value = parseInt(options.currentIndex) || 0
     // 批量获取所有复习题目数据
-    fetchReviewQuestions()
+    fetchReviewQuestions().finally(() => {
+      // 首次加载完成后设置为非首次加载
+      isFirstLoad.value = false
+    })
   } else {
     // 获取单个错题详情
     fetchNoteDetail(options.id).then(data => {
       if (data) {
         mistakeData.value = data
       }
+    }).finally(() => {
+      // 首次加载完成后设置为非首次加载
+      isFirstLoad.value = false
     })
   }
-  // 首次加载完成后设置为非首次加载
-  isFirstLoad.value = false
 })
 
 // 页面显示时重新获取数据
