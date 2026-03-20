@@ -31,6 +31,10 @@
           :status="item.status"
           @click="goToDetail(item.id)"
         />
+        <!-- 无数据提示 -->
+        <view v-if="mistakeList.length === 0" class="no-data">
+          <text>没有更多数据了</text>
+        </view>
       </view>
     </view>
   </view>
@@ -180,6 +184,16 @@ onShow(() => {
     }
     .mistakes-list {
       /* 样式由组件内部管理 */
+      .no-data {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 60rpx 0;
+        text {
+          font-size: 26rpx;
+          color: #9ca4b1;
+        }
+      }
     }
   }
 
