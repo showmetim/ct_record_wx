@@ -42,7 +42,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { onShow,onShareAppMessage } from '@dcloudio/uni-app'
+import { onShow,onLoad,onShareAppMessage } from '@dcloudio/uni-app'
 import MistakeItem from '../../components/MistakeItem.vue'
 import { getNoteList, noteStats } from '../../api/note'
 
@@ -99,9 +99,10 @@ onShareAppMessage(() => {
   }
 })
 
-
-// 页面加载时的逻辑
-onShow(() => {
+const fetchData = () => {
+  if (!firstLoad.value) {
+    return
+  }
   // 获取统计数据
   noteStats().then(res => {
     if (res.isSuccess) {
@@ -126,6 +127,16 @@ onShow(() => {
       }))
     }
   })
+}
+const firstLoad = ref(false)
+onLoad(() => {
+  fetchData()
+  firstLoad.value = true
+})
+
+// 页面加载时的逻辑
+onShow(() => {
+  fetchData()
 })
 </script>
 
