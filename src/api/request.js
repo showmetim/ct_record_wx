@@ -16,33 +16,40 @@ function requestInterceptor(config) {
 }
 
 // 响应拦截器
-function responseInterceptor(response) {
+function responseInterceptor(response, service, originalConfig) {
   const res = response.data;
-  // 可以根据业务逻辑处理响应
-  
-   if (res.code !== 200) {
-    return Promise.reject(new Error(res.msg || '请求失败'));
+  if (
+    (response.statusCode === 401 || res.code === 401) &&
+    !originalConfig._retry
+  ) {
+    originalConfig._retry = true;
+
+    // 清掉旧 token
+    uni.removeStorageSync('token');
+
+    // 重新登录
+    return login().then(() => {
+      return service.request(originalConfig); // ✅ 自动重试
+    });
   }
+
+  if (res.code !== 200) {
+    return Promise.reject(res.msg || '请求失败');
+  }
+
   return res;
 }
 function login() {
   if (loginPromise) return loginPromise;
+
   loginPromise = new Promise((resolve, reject) => {
-    const token = uni.getStorageSync('token');
-    // 已登录
-    if (token) {
-      resolve(token);
-      return;
-    }
     uni.login({
       provider: 'weixin',
       success: (loginRes) => {
         uni.request({
           url: baseURL + "users/login",
           method: "POST",
-          data: {
-            code: loginRes.code
-          },
+          data: { code: loginRes.code },
           success: (res) => {
             const result = res.data;
             if (result.code === 200) {
@@ -50,7 +57,7 @@ function login() {
               uni.setStorageSync('token', token);
               resolve(token);
             } else {
-              reject(result.msg || "登录失败");
+              reject(result.msg);
             }
           },
           fail: reject
@@ -59,46 +66,45 @@ function login() {
       fail: reject
     });
   });
-  return loginPromise;
+
+  return loginPromise.finally(() => {
+    loginPromise = null;
+  });
 }
 
 
 // 创建请求服务
 const service = {
   async request(config) {
-    // 登录
-    await login();
-    // 合并默认配置
+    let token = uni.getStorageSync('token');
+
+    // ✅ 只有没 token 才登录
+    if (!token) {
+      await login();
+      token = uni.getStorageSync('token');
+    }
+
     const options = {
       url: baseURL + config.url,
       method: config.method || 'GET',
       header: {
         'Content-Type': 'application/json',
-        ...config.headers
+        Authorization: token ? `Bearer ${token}` : '',
+        ...config.header
       },
       data: config.data,
       timeout
     };
 
-    // 请求拦截
-    const interceptedConfig = requestInterceptor(options);
-
-    // 发送请求
     return new Promise((resolve, reject) => {
       uni.request({
-        ...interceptedConfig,
+        ...options,
         success: (response) => {
-          try {
-            const result = responseInterceptor(response);
-            resolve(result);
-          } catch (error) {
-            reject(error);
-          }
+          Promise.resolve(responseInterceptor(response, service, config))
+            .then(resolve)
+            .catch(reject);
         },
-        fail: (error) => {
-          console.error('网络错误:', error.errMsg);
-          reject(error);
-        }
+        fail: reject
       });
     });
   },
