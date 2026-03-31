@@ -276,7 +276,7 @@ const deleteCategoryItem = (categoryId) => {
           }
         }).catch(err => {
           uni.showToast({
-            title: err.message || '删除分类失败',
+            title: err || '删除分类失败',
             icon: 'none'
           })
         })
